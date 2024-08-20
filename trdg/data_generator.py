@@ -6,6 +6,9 @@ from PIL import Image, ImageFilter, ImageStat
 from trdg import computer_text_generator, background_generator, distorsion_generator
 from trdg.utils import mask_to_bboxes, make_filename_valid
 
+from arabic_reshaper import ArabicReshaper
+from bidi.algorithm import get_display
+
 try:
     from trdg import handwritten_text_generator
 except ImportError as e:
@@ -257,6 +260,11 @@ class FakeTextDataGenerator(object):
             name = "{}_{}".format(str(index), text)
         elif name_format == 2:
             name = str(index)
+        elif name_format == 3:
+            # Arabic name format
+            arabic_reshaper = ArabicReshaper()
+            name = "{}_{}".format(text, str(index))
+            name = " ".join([get_display(arabic_reshaper.reshape(w)) for w in name.split(" ")[::-1]])
         else:
             print("{} is not a valid name format. Using default.".format(name_format))
             name = "{}_{}".format(text, str(index))
