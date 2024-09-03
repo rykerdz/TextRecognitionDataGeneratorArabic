@@ -142,8 +142,11 @@ class GeneratorFromStrings:
         # reshape RTL characters before generating any image
         rtl_strings = []
         for string in strings:
-            reshaped_string = rtl_shaper.reshape(string)
-            rtl_strings.append(get_display(reshaped_string))
+            try:
+                reshaped_string = rtl_shaper.reshape(string)
+                rtl_strings.append(get_display(reshaped_string))
+            except:
+                print("skipped one item")
         return rtl_strings
 
 
