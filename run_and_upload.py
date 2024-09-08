@@ -138,31 +138,27 @@ keywords_to_remove = {"العنوان:", "المقال:"}
 
 offset = 0
 # Process the dataset in top-level batches
-for batch_num in range(0, len(ds)//500_000):
-    print(f"Top-level Batch: {batch_num}")
+while offset < len(ds):
+    print(f"Processing batch starting from offset: {offset}")
 
-    print("Processing strings")
     strings_list = []
-    
-    end_offset = min(offset + 500_000, len(ds))  # Ensure we do not exceed dataset length
-    
-    for i in range(offset, end_offset):
-        item = ds[i]['text']  # Directly get the string
-        line = item  # Use the string directly
+    start_offset = offset  # Track where we start in this batch
+
+    # Process lines until we reach the batch size or end of dataset
+    while len(strings_list) < batch_size and offset < len(ds):
+        item = ds[offset]  # Get the line
+        line = item['text']  # Use the line directly
         sub_strings = process_line(line, keywords_to_remove)
         strings_list.extend(sub_strings)
-        print(f"Current len: {i}")
-    
-    # Update offset for the next batch
-    offset = end_offset
-    print("Finished string list")
         
-    random.shuffle(strings_list)
-    strings_list = strings_list[:500_000]  # Ensure batch size is exactly 1 million
+        offset += 1  # Move to the next line
+
+    # Ensure batch size is exactly 1 million
+    strings_list = strings_list[:batch_size]
 
     print("Started Generating images")
     # Generate and upload images for this top-level batch
-    batch_queue = parallel_generate(strings_list, fonts, batch_size=1000, thread_count=args.thread_count)
+    batch_queue = parallel_generate(strings_list, fonts, batch_size=1000)
 
 # Signal the uploader process to stop
 batch_queue.put(None)
