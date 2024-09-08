@@ -4,7 +4,7 @@ from PIL import Image
 from trdg.generators import GeneratorFromStrings
 import boto3
 from io import BytesIO
-from multiprocessing import Process, Queue
+from multiprocessing import Process, Queue, Pool
 import time
 import os
 
@@ -17,9 +17,9 @@ bucket_name = 'ocr88'
 print("Loading fonts....")
 font_dir = "/mnt/volume_nyc1_01/fonts/"
 fonts = [
-  os.path.join(font_dir, p)
-  for p in os.listdir(font_dir)
-  if os.path.splitext(p)[1] == ".ttf" or os.path.splitext(p)[1] == ".TTF"
+    os.path.join(font_dir, p)
+    for p in os.listdir(font_dir)
+    if os.path.splitext(p)[1] == ".ttf" or os.path.splitext(p)[1] == ".TTF"
 ]
 
 print(f"Loaded {len(fonts)} Font!")
@@ -41,8 +41,9 @@ def process_line(line, keywords_to_remove):
 
     return sub_strings
 
-# Function to generate and upload images
-def generate_and_upload(strings_batch, queue):
+# Function to generate images (batch processing)
+def generate_batch(batch_args):
+    strings_batch, fonts, queue, batch_size = batch_args
     generator = GeneratorFromStrings(
         strings_batch,
         size=100,
@@ -61,7 +62,6 @@ def generate_and_upload(strings_batch, queue):
         image_dir='/mnt/volume_nyc1_01/images/'
     )
 
-    batch_size = 1000
     batch = []
     start_generate_time = time.time()
     
@@ -113,19 +113,42 @@ batch_queue = Queue(maxsize=50)
 uploader = Process(target=upload_batch, args=(batch_queue,))
 uploader.start()
 
+# Function to parallelize image generation
+def parallel_generate(strings, fonts, batch_size=1000, thread_count=8):
+    queue = Queue(maxsize=50)
+    pool = Pool(thread_count)
+
+    # Prepare batch arguments
+    batch_args = [
+        (strings[i:i + batch_size], fonts, queue, batch_size)
+        for i in range(0, len(strings), batch_size)
+    ]
+
+    # Map the batch arguments to the worker function
+    pool.map(generate_batch, batch_args)
+    
+    pool.close()
+    pool.join()
+    
+    return queue
+
 # Load the dataset
 ds = load_dataset("premio-ai/TheArabicPile_Articles", "original", split='train')
 keywords_to_remove = {"العنوان:", "المقال:"}
 
+offset = 0
 # Process the dataset in top-level batches
-for batch_num in range(0, len(ds), 1_000_000):
+for batch_num in range(0, len(ds)//1_000_000):
     print(f"Top-level Batch: {batch_num}")
-    strings_list = []
 
     print("Processing strings")
-    for i in range(batch_num, min(batch_num + 1_000_000, len(ds))):
-        line = ds[i]['text']  
-        sub_strings = process_line(line, keywords_to_remove)
+    strings_list = []
+    for i, item in enumerate(ds[offset:]):
+        if len(strings_list) >= 1_000_000:
+            offset = i
+            break  # Stop once we've reached 1 million sub-strings
+        line = item['text']  # Ensure max 50 words
+        sub_strings = process_line(line)
         strings_list.extend(sub_strings)
         
     random.shuffle(strings_list)
@@ -133,7 +156,7 @@ for batch_num in range(0, len(ds), 1_000_000):
 
     print("Started Generating images")
     # Generate and upload images for this top-level batch
-    generate_and_upload(strings_list, batch_queue)
+    batch_queue = parallel_generate(strings_list, fonts, batch_size=1000, thread_count=args.thread_count)
 
 # Signal the uploader process to stop
 batch_queue.put(None)
