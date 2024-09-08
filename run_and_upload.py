@@ -147,7 +147,7 @@ for batch_num in range(0, len(ds)//1_000_000):
     end_offset = min(offset + 1_000_000, len(ds))  # Ensure we do not exceed dataset length
     
     for i in range(offset, end_offset):
-        item = ds[i]  # Directly get the string
+        item = ds[i]['text']  # Directly get the string
         line = item  # Use the string directly
         sub_strings = process_line(line, keywords_to_remove)
         strings_list.extend(sub_strings)
