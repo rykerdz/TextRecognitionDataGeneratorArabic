@@ -4,7 +4,7 @@ from PIL import Image
 from trdg.generators import GeneratorFromStrings
 import boto3
 from io import BytesIO
-from multiprocessing import Process, Queue, Pool
+from multiprocessing import Process, Queue, Manager
 import time
 import os
 
@@ -19,7 +19,7 @@ font_dir = "/mnt/volume_nyc1_01/fonts/"
 fonts = [
     os.path.join(font_dir, p)
     for p in os.listdir(font_dir)
-    if os.path.splitext(p)[1] == ".ttf" or os.path.splitext(p)[1] == ".TTF"
+    if os.path.splitext(p)[1].lower() == ".ttf"
 ]
 
 print(f"Loaded {len(fonts)} Font!")
@@ -42,8 +42,7 @@ def process_line(line, keywords_to_remove):
     return sub_strings
 
 # Function to generate images (batch processing)
-def generate_batch(batch_args):
-    strings_batch, fonts, queue, batch_size = batch_args
+def generate_batch(strings_batch, fonts, queue, batch_size):
     generator = GeneratorFromStrings(
         strings_batch,
         size=100,
@@ -98,7 +97,7 @@ def upload_batch(queue):
 
                 # Define the S3 object name
                 save_as = lbl.replace(" ", "_")
-                object_name = f'generated_images/img_{img_byte_arr[200]}_{save_as}.png'
+                object_name = f'generated_images/img_{int(time.time())}_{save_as}.png'
 
                 # Upload the image to S3
                 s3_client.put_object(Bucket=bucket_name, Key=object_name, Body=img_byte_arr, ContentType='image/png')
@@ -106,8 +105,9 @@ def upload_batch(queue):
         upload_time = time.time() - start_upload_time
         print(f"Upload Time for one batch: {upload_time:.2f} seconds")
 
-# Create a Queue for batch processing
-batch_queue = Queue(maxsize=50)
+# Create a Manager and Queue for batch processing
+manager = Manager()
+batch_queue = manager.Queue(maxsize=50)
 
 # Start the upload process
 uploader = Process(target=upload_batch, args=(batch_queue,))
@@ -115,7 +115,7 @@ uploader.start()
 
 # Function to parallelize image generation
 def parallel_generate(strings, fonts, batch_size=1000, thread_count=8):
-    queue = Queue(maxsize=50)
+    queue = manager.Queue(maxsize=50)
     pool = Pool(thread_count)
 
     # Prepare batch arguments
@@ -125,7 +125,7 @@ def parallel_generate(strings, fonts, batch_size=1000, thread_count=8):
     ]
 
     # Map the batch arguments to the worker function
-    pool.map(generate_batch, batch_args)
+    pool.starmap(generate_batch, batch_args)
     
     pool.close()
     pool.join()
@@ -156,7 +156,7 @@ while offset < len(ds):
 
     # Ensure batch size is exactly 1 million
     strings_list = strings_list[:batch_size_t]
-
+    print(len(strings_list))
     print("Started Generating images")
     # Generate and upload images for this top-level batch
     batch_queue = parallel_generate(strings_list, fonts, batch_size=1000)
