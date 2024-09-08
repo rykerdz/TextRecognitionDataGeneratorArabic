@@ -137,6 +137,7 @@ ds = load_dataset("premio-ai/TheArabicPile_Articles", "original", split='train')
 keywords_to_remove = {"العنوان:", "المقال:"}
 
 offset = 0
+batch_size_t = 1_000_000
 # Process the dataset in top-level batches
 while offset < len(ds):
     print(f"Processing batch starting from offset: {offset}")
@@ -145,7 +146,7 @@ while offset < len(ds):
     start_offset = offset  # Track where we start in this batch
 
     # Process lines until we reach the batch size or end of dataset
-    while len(strings_list) < batch_size and offset < len(ds):
+    while len(strings_list) < batch_size_t and offset < len(ds):
         item = ds[offset]  # Get the line
         line = item['text']  # Use the line directly
         sub_strings = process_line(line, keywords_to_remove)
@@ -154,7 +155,7 @@ while offset < len(ds):
         offset += 1  # Move to the next line
 
     # Ensure batch size is exactly 1 million
-    strings_list = strings_list[:batch_size]
+    strings_list = strings_list[:batch_size_t]
 
     print("Started Generating images")
     # Generate and upload images for this top-level batch
