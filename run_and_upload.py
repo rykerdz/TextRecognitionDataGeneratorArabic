@@ -4,7 +4,7 @@ from PIL import Image
 from trdg.generators import GeneratorFromStrings
 import boto3
 from io import BytesIO
-from multiprocessing import Process, Queue, Manager
+from multiprocessing import Process, Queue, Manager, Pool
 import time
 import os
 
