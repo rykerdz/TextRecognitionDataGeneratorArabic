@@ -6,6 +6,7 @@ import boto3
 from io import BytesIO
 from multiprocessing import Process, Queue
 import time
+import os
 
 # Initialize the S3 client
 s3_client = boto3.client('s3')
