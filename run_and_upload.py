@@ -143,14 +143,17 @@ for batch_num in range(0, len(ds)//1_000_000):
 
     print("Processing strings")
     strings_list = []
-    for i, item in enumerate(ds):
-        if len(strings_list) >= 1_000_000:
-            offset = i
-            break  # Stop once we've reached 1 million sub-strings
-        print(item)
-        line = item['text']  # Ensure max 50 words
-        sub_strings = process_line(line)
+    
+    end_offset = min(offset + 1_000_000, len(ds))  # Ensure we do not exceed dataset length
+    
+    for i in range(offset, end_offset):
+        item = ds[i]  # Directly get the string
+        line = item  # Use the string directly
+        sub_strings = process_line(line, keywords_to_remove)
         strings_list.extend(sub_strings)
+    
+    # Update offset for the next batch
+    offset = end_offset
         
     random.shuffle(strings_list)
     strings_list = strings_list[:1_000_000]  # Ensure batch size is exactly 1 million
