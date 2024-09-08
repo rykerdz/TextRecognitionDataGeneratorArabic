@@ -151,6 +151,7 @@ for batch_num in range(0, len(ds)//500_000):
         line = item  # Use the string directly
         sub_strings = process_line(line, keywords_to_remove)
         strings_list.extend(sub_strings)
+        print(f"Current len: {i}")
     
     # Update offset for the next batch
     offset = end_offset
