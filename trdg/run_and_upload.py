@@ -107,7 +107,7 @@ def upload_batch(queue):
         print(f"Upload Time for one batch: {upload_time:.2f} seconds")
 
 # Create a Queue for batch processing
-batch_queue = Queue(maxsize=10)
+batch_queue = Queue(maxsize=50)
 
 # Start the upload process
 uploader = Process(target=upload_batch, args=(batch_queue,))
@@ -119,8 +119,10 @@ keywords_to_remove = {"العنوان:", "المقال:"}
 
 # Process the dataset in top-level batches
 for batch_num in range(0, len(ds), 1_000_000):
+    print(f"Top-level Batch: {batch_num}")
     strings_list = []
 
+    print("Processing strings")
     for i in range(batch_num, min(batch_num + 1_000_000, len(ds))):
         line = ds[i]['text']  
         sub_strings = process_line(line, keywords_to_remove)
@@ -128,7 +130,8 @@ for batch_num in range(0, len(ds), 1_000_000):
         
     random.shuffle(strings_list)
     strings_list = strings_list[:1_000_000]  # Ensure batch size is exactly 1 million
-    
+
+    print("Started Generating images")
     # Generate and upload images for this top-level batch
     generate_and_upload(strings_list, batch_queue)
 
