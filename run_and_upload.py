@@ -147,6 +147,7 @@ for batch_num in range(0, len(ds)//1_000_000):
         if len(strings_list) >= 1_000_000:
             offset = i
             break  # Stop once we've reached 1 million sub-strings
+        print(item)
         line = item['text']  # Ensure max 50 words
         sub_strings = process_line(line)
         strings_list.extend(sub_strings)
