@@ -114,14 +114,14 @@ uploader = Process(target=upload_batch, args=(batch_queue,))
 uploader.start()
 
 # Function to parallelize image generation
-def parallel_generate(strings, fonts, batch_size=1000, thread_count=3):
+def parallel_generate(strings, fonts, batch_size=1000, thread_count=4):
     queue = manager.Queue(maxsize=50)
     pool = Pool(thread_count)
 
     # Prepare batch arguments
     batch_args = [
-        (strings[i:i + batch_size], fonts, queue, batch_size)
-        for i in range(0, len(strings), batch_size)
+        (strings, fonts, queue, batch_size)
+        for i in range(0, 4)
     ]
 
     # Map the batch arguments to the worker function
