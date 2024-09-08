@@ -114,7 +114,7 @@ uploader = Process(target=upload_batch, args=(batch_queue,))
 uploader.start()
 
 # Function to parallelize image generation
-def parallel_generate(strings, fonts, batch_size=1000, thread_count=8):
+def parallel_generate(strings, fonts, batch_size=1000, thread_count=3):
     queue = manager.Queue(maxsize=50)
     pool = Pool(thread_count)
 
