@@ -138,13 +138,13 @@ keywords_to_remove = {"العنوان:", "المقال:"}
 
 offset = 0
 # Process the dataset in top-level batches
-for batch_num in range(0, len(ds)//1_000_000):
+for batch_num in range(0, len(ds)//500_000):
     print(f"Top-level Batch: {batch_num}")
 
     print("Processing strings")
     strings_list = []
     
-    end_offset = min(offset + 1_000_000, len(ds))  # Ensure we do not exceed dataset length
+    end_offset = min(offset + 500_000, len(ds))  # Ensure we do not exceed dataset length
     
     for i in range(offset, end_offset):
         item = ds[i]['text']  # Directly get the string
@@ -154,9 +154,10 @@ for batch_num in range(0, len(ds)//1_000_000):
     
     # Update offset for the next batch
     offset = end_offset
+    print("Finished string list")
         
     random.shuffle(strings_list)
-    strings_list = strings_list[:1_000_000]  # Ensure batch size is exactly 1 million
+    strings_list = strings_list[:500_000]  # Ensure batch size is exactly 1 million
 
     print("Started Generating images")
     # Generate and upload images for this top-level batch
