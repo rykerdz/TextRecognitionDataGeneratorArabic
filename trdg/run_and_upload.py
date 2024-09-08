@@ -57,7 +57,7 @@ def generate_and_upload(strings_batch, queue):
         blur=0,
         random_blur=True,
         rtl=True,
-        image_dir='trdg/images/'
+        image_dir='/mnt/volume_nyc1_01/images/'
     )
 
     batch_size = 1000
