@@ -143,7 +143,7 @@ for batch_num in range(0, len(ds)//1_000_000):
 
     print("Processing strings")
     strings_list = []
-    for i, item in enumerate(ds[offset:]):
+    for i, item in enumerate(ds):
         if len(strings_list) >= 1_000_000:
             offset = i
             break  # Stop once we've reached 1 million sub-strings
